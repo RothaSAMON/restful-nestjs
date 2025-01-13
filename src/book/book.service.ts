@@ -33,7 +33,7 @@ export class BookService {
       throw new BadRequestException('Please enter the correct Id!');
     }
 
-    const book = await this.bookModel.findById(id);
+    const book = await this.bookModel.findOne({ _id: id }).populate('user');
 
     if (!book) {
       throw new NotFoundException('Book not found');

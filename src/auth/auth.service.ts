@@ -6,6 +6,8 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { Response } from 'express';
+import { CookieStrategy } from './cookie.strategy';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +15,7 @@ export class AuthService {
     @InjectModel(User.name)
     private userModel: Model<User>,
     private jwtService: JwtService,
+    private cookieStrategy: CookieStrategy,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<{ token: string }> {
@@ -30,7 +33,7 @@ export class AuthService {
     return { token };
   }
 
-  async login(loginDto: LoginDto): Promise<{ token: string }> {
+  async login(loginDto: LoginDto, res: Response): Promise<{ message: string }> {
     const { email, password } = loginDto;
 
     const user = await this.userModel.findOne({ email });
@@ -46,6 +49,12 @@ export class AuthService {
     }
 
     const token = this.jwtService.sign({ id: user._id });
-    return { token };
+    if (token) this.cookieStrategy.setCookie(res, token);
+    return { message: 'Successfully login!' };
+  }
+
+  async logout(res: Response): Promise<{ message: string }> {
+    this.cookieStrategy.clearCookie(res);
+    return { message: 'Successfully logout!' };
   }
 }

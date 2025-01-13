@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Model } from 'mongoose';
 import { User } from './schema/user.schema';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Request } from 'express';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -12,7 +13,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private userModal: Model<User>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          const token = request.cookies.token;
+          if (!token) {
+            throw new UnauthorizedException('Access denied: No authentication');
+          }
+          return token;
+        },
+      ]),
       secretOrKey: process.env.JWT_SECRET,
     });
   }
